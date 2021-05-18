@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -102,9 +103,9 @@ func IsDevEnv() bool {
 }
 
 func IsTestEnv() bool {
-	return conf.AppEnv == TestEnv
+	return strings.EqualFold(conf.AppEnv, TestEnv)
 }
 
 func IsReleaseEnv() bool {
-	return conf.AppEnv == ReleaseEnv
+	return strings.EqualFold(conf.AppEnv, ReleaseEnv)
 }
