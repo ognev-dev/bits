@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ func main() {
 	conf := config.Get()
 	logger.Setup()
 
-	log.Println("refto." + conf.AppEnv + " serving at " + conf.Server.Host + ":" + conf.Server.Port)
+	log.Println("refto.dev (" + conf.AppEnv + ") serving at " + conf.Server.Host + ":" + conf.Server.Port)
 
 	if config.IsReleaseEnv() {
 		gin.SetMode(conf.AppEnv)
@@ -34,8 +35,12 @@ func main() {
 			Handler: r,
 		}
 
-		quit := make(chan os.Signal)
-		signal.Notify(quit, os.Interrupt)
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit,
+			syscall.SIGHUP,
+			syscall.SIGINT,
+			syscall.SIGQUIT,
+		)
 
 		go func() {
 			<-quit
@@ -57,5 +62,5 @@ func main() {
 		}
 	}
 
-	log.Println("refto." + conf.AppEnv + " server closed")
+	log.Println("refto.dev (" + conf.AppEnv + ") server closed")
 }

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DevEnv     = "dev"
-	TestEnv    = "test"
-	ReleaseEnv = "release"
+	DevEnv     = "DEV"
+	TestEnv    = "TEST"
+	ReleaseEnv = "RELEASE"
 )
 
 type Config struct {

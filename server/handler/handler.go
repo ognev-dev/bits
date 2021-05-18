@@ -24,9 +24,10 @@ func abort400(c *gin.Context, err error) {
 	Abort(c, se.New400(err.Error()))
 }
 
-func abort422(c *gin.Context, err error) {
-	Abort(c, se.New422(err.Error()))
-}
+// Comment due to linting (unused)
+//func abort422(c *gin.Context, err error) {
+//	Abort(c, se.New422(err.Error()))
+//}
 
 func Abort(c *gin.Context, err error) {
 	resp := response.Error{}

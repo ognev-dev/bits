@@ -12,6 +12,7 @@ import (
 )
 
 func TestWebhookDataPushed(t *testing.T) {
+	// TODO
 	// To run this test you'll need real repo at conf.GitHub.DataRepo
 	// And also because repo cloning, data validation and import is executed in separate routine
 	// this test will succeed anyway
