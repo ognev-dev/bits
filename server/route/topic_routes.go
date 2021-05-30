@@ -5,6 +5,6 @@ import (
 	"github.com/refto/server/server/handler"
 )
 
-func topicRoutes(r *gin.RouterGroup) {
+func publicTopicRoutes(r *gin.RouterGroup) {
 	r.GET("topics/", handler.GetTopics)
 }

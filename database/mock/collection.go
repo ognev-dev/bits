@@ -1,4 +1,4 @@
-package factory
+package mock
 
 import (
 	fake "github.com/brianvoe/gofakeit"
@@ -7,7 +7,7 @@ import (
 	"github.com/refto/server/service/collection"
 )
 
-func MakeCollection(opt ...model.Collection) (m model.Collection, err error) {
+func Collection(opt ...model.Collection) (m model.Collection, err error) {
 	if len(opt) == 1 {
 		m = opt[0]
 	}
@@ -23,7 +23,7 @@ func MakeCollection(opt ...model.Collection) (m model.Collection, err error) {
 	}
 	if m.UserID == 0 {
 		if m.User == nil {
-			userEl, err := CreateUser()
+			userEl, err := InsertUser()
 			if err != nil {
 				return m, err
 			}
@@ -35,8 +35,8 @@ func MakeCollection(opt ...model.Collection) (m model.Collection, err error) {
 	return
 }
 
-func CreateCollection(opt ...model.Collection) (m model.Collection, err error) {
-	m, err = MakeCollection(opt...)
+func InsertCollection(opt ...model.Collection) (m model.Collection, err error) {
+	m, err = Collection(opt...)
 	if err != nil {
 		return
 	}

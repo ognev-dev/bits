@@ -17,17 +17,12 @@ server:
   # For example if local path is set to "./web" and web path is set to "/static/"
   # requesting "/static/something.html" will serve "./web/something.html" if exists
   static:
-    local_path: "./web"
-    web_path: "/~/"
+    local: "./web"
+    web: "/~/"
 
 github:
   client_id:
   client_secret:
-
-  data_repo: https://github.com/refto/data.git
-
-  # This is the same secret you set on GitHub's push hook of the repo above
-  data_pushed_hook_secret: SomeSecretToSignHooks
 
   # Data Warden is a GitHub app that helps with data checks and validation
   # https://github.com/apps/data-warden

@@ -1,4 +1,4 @@
-package factory
+package mock
 
 import (
 	fake "github.com/brianvoe/gofakeit"
@@ -8,7 +8,7 @@ import (
 	entitytopic "github.com/refto/server/service/entity_topic"
 )
 
-func MakeEntity(opt ...model.Entity) (m model.Entity, err error) {
+func Entity(opt ...model.Entity) (m model.Entity, err error) {
 	if len(opt) == 1 {
 		m = opt[0]
 	}
@@ -28,18 +28,26 @@ func MakeEntity(opt ...model.Entity) (m model.Entity, err error) {
 	if len(m.Topics) == 0 {
 		m.Topics = make([]model.Topic, 5)
 		for i := range m.Topics {
-			m.Topics[i], err = MakeTopic()
+			m.Topics[i], err = Topic()
 			if err != nil {
 				return
 			}
 		}
 	}
+	if m.RepoID == 0 {
+		var repo model.Repository
+		repo, err = InsertRepository()
+		if err != nil {
+			return
+		}
+		m.RepoID = repo.ID
+	}
 
 	return
 }
 
-func CreateEntity(opt ...model.Entity) (m model.Entity, err error) {
-	m, err = MakeEntity(opt...)
+func InsertEntity(opt ...model.Entity) (m model.Entity, err error) {
+	m, err = Entity(opt...)
 	if err != nil {
 		return
 	}

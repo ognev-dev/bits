@@ -17,27 +17,36 @@ type GitHubWebHookHeaders struct {
 }
 
 type GitHubRepoPushed struct {
-	Repo GitHubRepoPushedRepo `json:"repository" binding:"required"`
+	Repo GitHubRepo `json:"repository" binding:"required"`
 }
 
-type GitHubRepoPushedRepo struct {
-	CloneURL string `json:"clone_url" binding:"required"`
+type GitHubRepo struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	CloneURL    string `json:"clone_url" binding:"required"`
+	Path        string `json:"full_name" binding:"required"`
+	Private     bool   `json:"private" binding:"required"`
 }
 
 type GitHubPullRequestEvent struct {
-	Action      githubpullrequest.Action `json:"action"`
-	Number      int                      `json:"number"`
-	PullRequest GitHubPullRequest        `json:"pull_request"`
+	Action githubpullrequest.Action `json:"action"`
+	Number int                      `json:"number"`
+	PR     GitHubPR                 `json:"pull_request"`
+	Repo   GitHubRepo               `json:"repository"`
 }
 
-type GitHubPullRequest struct {
+type GitHubPR struct {
+	Title      string          `json:"title"`
+	HTMLURL    string          `json:"html_url"`
 	User       GitHubUser      `json:"user"`
 	CommitsURL string          `json:"commits_url"`
 	Head       PullRequestHead `json:"head"`
 }
 
 type GitHubUser struct {
-	Login string `json:"login"`
+	AvatarURL string `json:"avatar_url"`
+	Login     string `json:"login"`
+	HTMLURL   string `json:"html_url"`
 }
 
 type PullRequestHead struct {

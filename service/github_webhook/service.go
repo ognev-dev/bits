@@ -9,16 +9,17 @@ import (
 const PushEvent = "push"
 const PullRequestEvent = "pull_request"
 
+// SigPrefix
 // GitHub adds a prefix "sha1=" to the hash
 const SigPrefix = "sha1="
 
-// HashMAC generates hmac of given body and key
+// MakeHMAC generates hmac of given body and key
 // https://developer.github.com/webhooks/event-payloads/#delivery-headers
 // The HMAC hex digest of the response body.
 // This header will be sent if the webhook is configured with a secret.
 // The HMAC hex digest is generated using the sha1 hash function and the secret as the HMAC key.
 // Note: github also adds a prefix "sha1=" to the hash
-func HashMAC(body, key string) (hash string, err error) {
+func MakeHMAC(body, key string) (hash string, err error) {
 	h := hmac.New(sha1.New, []byte(key))
 	_, err = h.Write([]byte(body))
 	if err != nil {
@@ -29,7 +30,7 @@ func HashMAC(body, key string) (hash string, err error) {
 	return
 }
 
-func ValidMAC(body []byte, hash, key string) (ok bool, err error) {
+func IsValidHMAC(body []byte, hash, key string) (ok bool, err error) {
 	h := hmac.New(sha1.New, []byte(key))
 	_, err = h.Write(body)
 	if err != nil {

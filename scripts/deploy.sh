@@ -13,14 +13,14 @@ echo "Staring project deploy"
 # how to use:
 # 1. copy this file to ../bin or elsewhere you like (../bin is convenient because it is in project dir and out of git)
 # 2. set variables that is just right below
-#     note that some config values is out of deploy variables,
-#     so scroll through this script and make sure that everything is correct
+#     note that some config values is out of variables,
+#     jump to "Writing config" line and make sure that everything is correct there
 # 3. run this script
 
 # remote's requirements:
 # 1. supervisor must be installed and config for supervisor to run server must be created
 #     (look at ../scripts/supervisor.conf for example)
-# TODO drop supervisor in favor for systemd
+#    if you use something else, delete lines here that stop and start supervisor
 # 2. postgres database configured and running
 
 # Note: during deploy you'll need to authenticate at remote twice
@@ -48,10 +48,6 @@ dbAddr=localhost:5432
 dbName=refto
 dbUser=postgres
 dbPassword=postgres
-# data repository to clone data from
-dataRepo=https://github.com/refto/data.git
-# This is the same secret you set on GitHub's push hook of the repo above
-dataPushedHookSecret=
 
 # Github's app to connect users with
 # https://github.com/settings/applications/new
@@ -165,10 +161,10 @@ echo " - Making archive of static data..."
 tar -czf refto-static.tar.gz ./web
 
 echo " - Copying files to remote (${remoteUser}@${remoreAddr})..."
-scp ./bin/refto-server ./bin/refto-cli refto-static.tar.gz ${remoteUser}@${remoreAddr}:~/ || exit
+scp ./bin/refto-server ./bin/refto-cli refto-static.tar.gz "${remoteUser}@${remoreAddr}":~/ || exit
 
 echo " - Setting up server on remote..."
-ssh -T ${remoteUser}@${remoreAddr} << EOF
+ssh -T "${remoteUser}@${remoreAddr}" << EOF
 echo " - Stopping supervisor..."
 sudo service supervisor stop || exit
 
@@ -198,14 +194,12 @@ server:
   port: $serverPort
   api_base_path: api
   static:
-    local_path: "./web"
-    web_path: "/~/"
+    local: "./web"
+    web: "/~/"
 
 github:
   client_id: $githubClientID
   client_secret: $githubClientSecret
-  data_repo: $dataRepo
-  data_pushed_hook_secret: $dataPushedHookSecret
   data_warden:
     app_id: 1
     install_id: 1

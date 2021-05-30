@@ -27,9 +27,11 @@ func Filter(req request.FilterTopics) (data []model.Topic, count int, err error)
 // For given topic B, should return A, C
 // For given topics A,B, should return C
 // For given topics A,E, should return D
-func Common(in []string, collectionID int64) (out []string, err error) {
-	// return all topics
-	if len(in) == 0 && collectionID == 0 {
+// (Also collection and repo should filtered if provided)
+// TODO topics from hidden and private repos will leak!
+func Common(in CommonTopicsParams) (out []string, err error) {
+	// just return all topics
+	if len(in.Topics) == 0 && in.CollectionID == 0 && in.RepoID == 0 {
 		err = database.ORM().
 			Model(&[]model.Topic{}).
 			Column("name").
@@ -37,16 +39,28 @@ func Common(in []string, collectionID int64) (out []string, err error) {
 			Select(&out)
 		return
 	}
-	// return all topics of collection
-	if len(in) == 0 && collectionID != 0 {
+
+	// just return all topics of collection
+	if in.CollectionID != 0 && len(in.Topics) == 0 && in.RepoID == 0 {
 		err = database.ORM().
 			Model(&[]model.Topic{}).
 			Column("name").
 			Join("JOIN entity_topics et ON et.topic_id=topic.id").
 			Join("JOIN collection_entities ce ON ce.entity_id=et.entity_id").
-			Where("ce.collection_id = ?", collectionID).
+			Where("ce.collection_id = ?", in.CollectionID).
 			Order("name").
 			Group("topic.id").
+			Select(&out)
+		return
+	}
+
+	// just return all topics of repo
+	if in.RepoID != 0 && len(in.Topics) == 0 && in.CollectionID == 0 {
+		err = database.ORM().
+			Model(&[]model.Topic{}).
+			Where("repo_id = ?", in.RepoID).
+			Column("name").
+			Order("name").
 			Select(&out)
 		return
 	}
@@ -58,13 +72,17 @@ func Common(in []string, collectionID int64) (out []string, err error) {
 		Join("JOIN entity_topics et ON et.topic_id=topic.id").
 		Join("JOIN entities e ON et.entity_id=e.id").
 		WhereIn("topic.name IN (?)", in).
-		Having("COUNT(topic.id) = ?", len(in)).
+		Having("COUNT(topic.id) = ?", len(in.Topics)).
 		Group("e.id")
 
-	if collectionID != 0 {
+	if in.CollectionID != 0 {
 		entities = entities.
 			Join("JOIN collection_entities ce ON ce.entity_id=e.id").
-			Where("ce.collection_id = ?", collectionID)
+			Where("ce.collection_id = ?", in.CollectionID)
+	}
+	if in.RepoID != 0 {
+		entities = entities.
+			Where("topic.repo_id = ?", in.RepoID)
 	}
 
 	// select topics (of selected entities) that not a given topics
@@ -83,17 +101,17 @@ func Common(in []string, collectionID int64) (out []string, err error) {
 	return
 }
 
-func FirstOrCreate(name string) (elem model.Topic, err error) {
+func FirstOrCreate(elem *model.Topic) (err error) {
 	err = database.ORM().
 		Model(&elem).
-		Where("name = ?", name).
+		Where("name = ?", elem.Name).
+		Where("repo_id = ?", elem.RepoID).
 		First()
 	if err != nil && err != pg.ErrNoRows {
 		return
 	}
 
 	if err == pg.ErrNoRows {
-		elem.Name = name
 		err = database.ORM().Insert(&elem)
 	}
 

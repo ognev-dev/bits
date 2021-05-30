@@ -9,7 +9,7 @@ func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
-// Generic map
+// M is a generic map
 type M map[string]interface{}
 
 var (

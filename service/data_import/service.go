@@ -3,18 +3,26 @@ package dataimport
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/refto/server/service/repository"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ghodss/yaml"
+	"github.com/go-git/go-git/v5"
 	"github.com/refto/server/config"
 	"github.com/refto/server/database"
 	"github.com/refto/server/database/model"
+	"github.com/refto/server/errors"
 	"github.com/refto/server/service/data"
 	"github.com/refto/server/service/entity"
 	entitytopic "github.com/refto/server/service/entity_topic"
+	jsonschema "github.com/refto/server/service/json_schema"
 	"github.com/refto/server/service/topic"
+	"github.com/refto/server/util"
 )
 
 // type of data is added as topic
@@ -32,36 +40,103 @@ var autoTopicExceptions = []string{
 	"definition",
 }
 
+func FromGitHub(repo model.Repository) (err error) {
+	startAt := time.Now()
+
+	defer func() {
+		repo.ImportAt = util.NewTime(time.Now())
+
+		if err == nil && !repo.Confirmed {
+			repo.Confirmed = true
+		}
+		if err != nil {
+			repo.ImportStatus = model.RepoImportStatusErr
+			repo.ImportLog = err.Error()
+		} else {
+			repo.ImportStatus = model.RepoImportStatusOK
+			// TODO would be nice to tell how many entities and topics imported?
+			repo.ImportLog = "Date imported in " + time.Since(startAt).String()
+		}
+
+		err2 := repository.Update(&repo)
+		if err2 != nil {
+			logrus.Error("[ERROR] clone and import: update repo: " + err2.Error())
+		}
+	}()
+
+	// make dir to clone to
+	conf := config.Get()
+	cloneTo := path.Join(conf.Dir.Data, repo.Path)
+	err = os.RemoveAll(cloneTo) // If the path does not exist RemoveAll  returns nil error
+	if err != nil {
+		err = errors.Wrap(err, "os.RemoveAll")
+		return
+	}
+	_ = os.MkdirAll(cloneTo, 0755)
+
+	// clone
+	_, err = git.PlainClone(conf.Dir.Data, false, &git.CloneOptions{
+		URL:               repo.CloneURL,
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+	})
+	if err != nil {
+		err = errors.Wrap(err, "git clone")
+		return
+	}
+
+	// validate
+	_, err = jsonschema.Validate(cloneTo)
+	if err != nil {
+		err = errors.Wrap(err, "data validate")
+		return
+	}
+
+	// import to DB
+	err = FromDir(cloneTo, repo.ID)
+	if err != nil {
+		err = errors.Wrap(err, "data import")
+		return
+	}
+
+	return nil
+}
+
+// FromDir imports data from local path
 // TODO partial import
-func Import() (err error) {
+func FromDir(dir string, repoID int64) (err error) {
 	// Mark all data as deleted,
 	// and while importing restore existing entities
 	// Entities still marked as deleted after import should be deleted for real
-	_, err = database.ORM().Exec("UPDATE entities SET deleted_at=NOW()")
+	_, err = database.ORM().
+		Exec("UPDATE entities SET deleted_at=NOW() WHERE repo_id = ?", repoID)
 	if err != nil {
 		return
 	}
 
 	// delete topics
-	_, err = database.ORM().Exec("DELETE FROM entity_topics")
+	_, err = database.ORM().
+		Exec("DELETE FROM entity_topics WHERE topic_id IN (SELECT id FROM topic WHERE repo_id = ?)", repoID)
 	if err != nil {
 		return
 	}
-	_, err = database.ORM().Exec("DELETE FROM topics")
+	_, err = database.ORM().
+		Exec("DELETE FROM topics WHERE repo_id = ?", repoID)
 	if err != nil {
 		return
 	}
 
-	err = importDataFromDir()
+	err = importDataFromDir(dir, repoID)
 	if err != nil {
 		return
 	}
 
-	// TODO: since collections introduced it not good to hard delete entities,
+	// TODO: since collections introduced it is not good to hard delete entities,
 	//  because that will be confusing when entity from collection simply disappear.
-	//  Maybe if entity is in any collection then keep it marked as deleted and display it as deleted when viewed in collection
+	//  Maybe if entity is in any collection then keep it marked as deleted and display it as deleted when it viewed in collection
 	//  Or implement notification system and inform everyone (that have deleted entity in their collection) about deleted entity
-	_, err = database.ORM().Exec("DELETE FROM entities WHERE deleted_at IS NOT NULL")
+	// 	Or make public changelog, so it will be clear to everyone what happened
+	_, err = database.ORM().
+		Exec("DELETE FROM entities WHERE deleted_at IS NOT NULL AND repo_id = ?", repoID)
 	if err != nil {
 		return
 	}
@@ -69,8 +144,8 @@ func Import() (err error) {
 	return
 }
 
-func importDataFromDir() (err error) {
-	err = filepath.Walk(config.Get().Dir.Data, func(path string, f os.FileInfo, wErr error) (err error) {
+func importDataFromDir(dir string, repoID int64) (err error) {
+	err = filepath.Walk(dir, func(path string, f os.FileInfo, wErr error) (err error) {
 		if wErr != nil {
 			return wErr
 		}
@@ -101,7 +176,7 @@ func importDataFromDir() (err error) {
 		if extWithType[0] != '.' {
 			extWithType = "." + extWithType
 		}
-		token := strings.TrimPrefix(path, config.Get().Dir.Data)
+		token := strings.TrimPrefix(path, dir)
 		token = strings.TrimSuffix(token, extWithType)
 
 		var entityData model.EntityData
@@ -110,7 +185,7 @@ func importDataFromDir() (err error) {
 			return
 		}
 
-		// prepend
+		// prepend type of data to topic
 		prependTopics := make([]string, 0)
 		if eType != "" && useTypeAsTopic(eType) {
 			prependTopics = append(prependTopics, eType)
@@ -124,26 +199,31 @@ func importDataFromDir() (err error) {
 			dataEl.Topics = append([]string{eType}, dataEl.Topics...)
 		}
 
-		entityEl := model.Entity{
+		mEntity := model.Entity{
+			RepoID:    repoID,
 			Token:     token,
 			Title:     dataEl.Title,
 			Type:      eType,
 			Data:      entityData,
 			CreatedAt: time.Now(),
 		}
-		err = entity.CreateOrUpdate(&entityEl)
+		err = entity.CreateOrUpdate(&mEntity)
 		if err != nil {
 			return
 		}
 
 		for _, name := range dataEl.Topics {
-			topicEl, err := topic.FirstOrCreate(name) // TODO keep cache in memory?
+			mTopic := model.Topic{
+				Name:   name,
+				RepoID: repoID,
+			}
+			err := topic.FirstOrCreate(&mTopic) // TODO keep cache in memory?
 			if err != nil {
 				return err
 			}
 			err = entitytopic.Create(model.EntityTopic{
-				EntityID: entityEl.ID,
-				TopicID:  topicEl.ID,
+				EntityID: mEntity.ID,
+				TopicID:  mTopic.ID,
 			})
 			if err != nil {
 				return err

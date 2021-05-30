@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/refto/server/database"
-	"github.com/refto/server/database/factory"
+	"github.com/refto/server/database/mock"
 	"github.com/refto/server/database/model"
 	"github.com/refto/server/server/request"
 	"github.com/refto/server/server/response"
@@ -17,7 +17,7 @@ func TestFilterTopic(t *testing.T) {
 	// Create test data
 	topics := []string{"test_this", "test_that", "test_else"}
 	for _, name := range topics {
-		_, err := factory.CreateTopic(model.Topic{Name: name})
+		_, err := mock.InsertTopic(model.Topic{Name: name})
 		assert.NotError(t, err)
 	}
 

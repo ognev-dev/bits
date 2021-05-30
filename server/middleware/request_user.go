@@ -16,8 +16,9 @@ const authErrorKey = "auth_error"
 
 // RequestUser Middleware
 // Attempt to resolve user by given auth token
+// Because some public routes response depends on current user
 // Authorization also happens here, because it is required to check that auth token is valid,
-// but auth errors not thrown here, because this middleware should only resolve user.
+// but auth errors not thrown here, because this middleware should only resolve that user is authorized
 // Instead auth errors placed in request context for later use by auth middleware if needed
 func RequestUser(c *gin.Context) {
 	sig := c.Request.Header.Get("Authorization")
@@ -71,6 +72,6 @@ func RequestUser(c *gin.Context) {
 	}
 
 	c.Set(authSuccessKey, true)
-	request.SetUser(c, *userEl)
+	request.SetAuthUser(c, *userEl)
 	c.Next()
 }

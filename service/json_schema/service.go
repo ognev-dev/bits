@@ -52,7 +52,7 @@ func Validate(dirPath string) (resp ValidateResult, err error) {
 		return
 	}
 
-	// add trailing slash, so base name of file will will not have it
+	// add trailing slash, so base name of file that not have it
 	// when displaying errors and messages
 	if !strings.HasSuffix(dirPath, string(filepath.Separator)) {
 		dirPath += string(filepath.Separator)

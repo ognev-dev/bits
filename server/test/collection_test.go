@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit"
-	"github.com/refto/server/database/factory"
+	"github.com/refto/server/database/mock"
 	"github.com/refto/server/database/model"
 	"github.com/refto/server/server/request"
 	"github.com/refto/server/server/response"
@@ -15,15 +15,15 @@ import (
 )
 
 func TestGetCollections(t *testing.T) {
-	AuthoriseNew(t)
+	Authorise(t)
 
-	c1, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "C1"})
+	c1, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "C1"})
 	assert.NotError(t, err)
-	c2, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "C2"})
+	c2, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "C2"})
 	assert.NotError(t, err)
-	c3, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "C3"})
+	c3, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "C3"})
 	assert.NotError(t, err)
-	_, err = factory.CreateCollection() // should not be in response
+	_, err = mock.InsertCollection() // should not be in response
 	assert.NotError(t, err)
 
 	var req request.FilterCollections
@@ -50,16 +50,16 @@ func TestGetCollections(t *testing.T) {
 
 	// Test entities count
 	// create 3 entities for c1
-	_, err = factory.CreateCollectionEntity(model.CollectionEntity{Collection: &c1})
+	_, err = mock.InsertCollectionEntity(model.CollectionEntity{Collection: &c1})
 	assert.NotError(t, err)
-	_, err = factory.CreateCollectionEntity(model.CollectionEntity{Collection: &c1})
+	_, err = mock.InsertCollectionEntity(model.CollectionEntity{Collection: &c1})
 	assert.NotError(t, err)
-	_, err = factory.CreateCollectionEntity(model.CollectionEntity{Collection: &c1})
+	_, err = mock.InsertCollectionEntity(model.CollectionEntity{Collection: &c1})
 	assert.NotError(t, err)
 	// create 2 entities for c3
-	_, err = factory.CreateCollectionEntity(model.CollectionEntity{Collection: &c3})
+	_, err = mock.InsertCollectionEntity(model.CollectionEntity{Collection: &c3})
 	assert.NotError(t, err)
-	_, err = factory.CreateCollectionEntity(model.CollectionEntity{Collection: &c3})
+	_, err = mock.InsertCollectionEntity(model.CollectionEntity{Collection: &c3})
 	assert.NotError(t, err)
 
 	assertCounts := map[int64]int{
@@ -85,15 +85,15 @@ func TestGetCollections(t *testing.T) {
 func TestGetCollections_FilterByName(t *testing.T) {
 	Authorise(t)
 
-	c1, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "111Name"})
+	c1, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "111Name"})
 	assert.NotError(t, err)
-	c2, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "222Name"})
+	c2, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "222Name"})
 	assert.NotError(t, err)
-	c3, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "333Name"})
+	c3, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "333Name"})
 	assert.NotError(t, err)
-	_, err = factory.CreateCollection(model.Collection{UserID: AuthUser.ID, Name: "xxx"}) // should not be in response
+	_, err = mock.InsertCollection(model.Collection{UserID: AuthUser.ID, Name: "xxx"}) // should not be in response
 	assert.NotError(t, err)
-	_, err = factory.CreateCollection(model.Collection{Name: "xxxName"}) // should not be in response
+	_, err = mock.InsertCollection(model.Collection{Name: "xxxName"}) // should not be in response
 	assert.NotError(t, err)
 
 	req := request.FilterCollections{
@@ -143,7 +143,7 @@ func TestCreateCollection(t *testing.T) {
 func TestUpdateCollection(t *testing.T) {
 	Authorise(t)
 
-	elem, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID})
+	elem, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID})
 	assert.NotError(t, err)
 
 	req := request.UpdateCollection{
@@ -166,9 +166,9 @@ func TestUpdateCollection(t *testing.T) {
 func TestDeleteCollection(t *testing.T) {
 	Authorise(t)
 
-	c, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID})
+	c, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID})
 	assert.NotError(t, err)
-	ce, err := factory.CreateCollectionEntity(model.CollectionEntity{CollectionID: c.ID})
+	ce, err := mock.InsertCollectionEntity(model.CollectionEntity{CollectionID: c.ID})
 	assert.NotError(t, err)
 
 	assert.DatabaseHas(t, "collections", util.M{
@@ -195,9 +195,9 @@ func TestDeleteCollection(t *testing.T) {
 func TestAddEntityToCollection(t *testing.T) {
 	Authorise(t)
 
-	c, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID})
+	c, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID})
 	assert.NotError(t, err)
-	e, err := factory.CreateEntity()
+	e, err := mock.InsertEntity()
 	assert.NotError(t, err)
 
 	assert.DatabaseMissing(t, "collection_entities", util.M{
@@ -218,9 +218,9 @@ func TestAddEntityToCollection(t *testing.T) {
 func TestRemoveEntityFromCollection(t *testing.T) {
 	Authorise(t)
 
-	c, err := factory.CreateCollection(model.Collection{UserID: AuthUser.ID})
+	c, err := mock.InsertCollection(model.Collection{UserID: AuthUser.ID})
 	assert.NotError(t, err)
-	ce, err := factory.CreateCollectionEntity(model.CollectionEntity{CollectionID: c.ID})
+	ce, err := mock.InsertCollectionEntity(model.CollectionEntity{CollectionID: c.ID})
 	assert.NotError(t, err)
 
 	assert.DatabaseHas(t, "collections", util.M{

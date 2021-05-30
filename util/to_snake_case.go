@@ -2,11 +2,11 @@ package util
 
 import "unicode"
 
-// Blatantly saved from
+// Blatantly copied from
 // https://gist.github.com/elwinar/14e1e897fdbe4d3432e1
 // Many thanks
 
-// ToSnake convert the given string to snake case following the Golang format:
+// ToSnakeCase convert the given string to snake case following the Golang format:
 // acronyms are converted to lower-case and preceded by an underscore.
 func ToSnakeCase(in string) string {
 	runes := []rune(in)

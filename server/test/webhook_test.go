@@ -22,12 +22,12 @@ func TestWebhookDataPushed(t *testing.T) {
 
 	conf := config.Get()
 	req := request.GitHubRepoPushed{
-		Repo: request.GitHubRepoPushedRepo{
+		Repo: request.GitHubRepo{
 			CloneURL: conf.GitHub.DataRepo,
 		},
 	}
 
-	sig, err := githubwebhook.HashMAC(
+	sig, err := githubwebhook.MakeHMAC(
 		`{"repository":{"clone_url":"`+conf.GitHub.DataRepo+`"}}`,
 		conf.GitHub.DataPushedHookSecret,
 	)
@@ -50,12 +50,12 @@ func TestWebhookPullRequest(t *testing.T) {
 
 	conf := config.Get()
 	req := request.GitHubRepoPushed{
-		Repo: request.GitHubRepoPushedRepo{
+		Repo: request.GitHubRepo{
 			CloneURL: conf.GitHub.DataRepo,
 		},
 	}
 
-	sig, err := githubwebhook.HashMAC(
+	sig, err := githubwebhook.MakeHMAC(
 		`{"repository":{"clone_url":"`+conf.GitHub.DataRepo+`"}}`,
 		conf.GitHub.DataPushedHookSecret,
 	)

@@ -32,12 +32,12 @@ type Config struct {
 		ApiBasePath string `yaml:"api_base_path"`
 
 		// Static directive defines local and web paths.
-		// Anything that is requested from "WebPath" will served from "LocalPath" as-is
+		// Anything that is requested from "Web" will served from "Local" as-is
 		// For example if local path is set to "./web" and web path is set to "/static/"
 		// requesting "/static/something.html" will serve "./web/something.html" if exists
 		Static struct {
-			LocalPath string `yaml:"local_path"`
-			WebPath   string `yaml:"web_path"`
+			Local string
+			Web   string
 		}
 	}
 
@@ -47,9 +47,6 @@ type Config struct {
 	}
 
 	GitHub struct {
-		DataRepo             string `yaml:"data_repo"`
-		DataPushedHookSecret string `yaml:"data_pushed_hook_secret"`
-
 		// Data Warden is GitHub app that helps with data checks and validation
 		// https://github.com/apps/data-warden
 		DataWarden struct {

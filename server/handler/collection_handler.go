@@ -15,7 +15,7 @@ func GetCollections(c *gin.Context) {
 		return
 	}
 
-	req.UserID = request.User(c).ID
+	req.UserID = request.AuthUser(c).ID
 	data, count, err := collection.Filter(req)
 	if err != nil {
 		Abort(c, err)
@@ -29,13 +29,7 @@ func GetCollections(c *gin.Context) {
 }
 
 func GetCollectionByToken(c *gin.Context) {
-	col, err := collection.FindByToken(c.Param("token"))
-	if err != nil {
-		Abort(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, col)
+	c.JSON(http.StatusOK, request.Collection(c))
 }
 
 func CreateCollection(c *gin.Context) {

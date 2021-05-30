@@ -39,7 +39,7 @@ func GetEntities(c *gin.Context) {
 			return
 		}
 
-		if col.Private && col.UserID != request.User(c).ID {
+		if col.Private && col.UserID != request.AuthUser(c).ID {
 			err = errors.New("unable to display entities from private collection")
 			Abort(c, err)
 			return
@@ -52,7 +52,11 @@ func GetEntities(c *gin.Context) {
 		return
 	}
 
-	topics, err := topic.Common(req.Topics, req.Collection)
+	topics, err := topic.Common(topic.CommonTopicsParams{
+		Topics:       req.Topics,
+		CollectionID: req.Collection,
+		RepoID:       req.Repo,
+	})
 	if err != nil {
 		Abort(c, err)
 		return
@@ -80,9 +84,9 @@ func GetEntityByID(c *gin.Context) {
 		return
 	}
 
-	if request.HasUser(c) {
+	if request.HasAuthUser(c) {
 		e.Collections, _, err = collection.Filter(request.FilterCollections{
-			UserID:   request.User(c).ID,
+			UserID:   request.AuthUser(c).ID,
 			EntityID: e.ID,
 		})
 		if err != nil {

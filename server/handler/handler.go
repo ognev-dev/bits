@@ -2,81 +2,73 @@ package handler
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
-	"net/http"
 	"runtime/debug"
 	"strconv"
 
+	"github.com/refto/server/errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-pg/pg/v9"
-	"github.com/refto/server/config"
-	se "github.com/refto/server/server/error"
 	"github.com/refto/server/server/response"
 	log "github.com/sirupsen/logrus"
 )
 
-type Validatable interface {
+var (
+	ErrIDParamMissingFromRequest = errors.BadRequest("ID param missing from request")
+	ErrIDParamMustBeInt64        = errors.BadRequest("ID param must be positive int64")
+)
+
+type Validator interface {
 	Validate(c *gin.Context) error
 }
 
-func abort400(c *gin.Context, err error) {
-	Abort(c, se.New400(err.Error()))
-}
-
-// Comment due to linting (unused)
-//func abort422(c *gin.Context, err error) {
-//	Abort(c, se.New422(err.Error()))
-//}
-
 func Abort(c *gin.Context, err error) {
-	resp := response.Error{}
-	code := http.StatusInternalServerError
+	resp := response.Error{
+		Code: errors.CodeInternal,
+	}
 
 	switch e := err.(type) {
-	case se.Error:
-		code = e.Code
+	case errors.Error:
+		resp.Code = e.Code
 		resp.Error = e.Error()
-	case se.List:
-		resp.Errors = err.(se.List)
-	case se.Input:
-		resp.InputErrors = err.(se.Input)
-		code = http.StatusUnprocessableEntity
+	case errors.Input:
+		resp.Code = errors.CodeUnprocessable
+		resp.InputErrors = e
 	default:
 		resp.Error = err.Error()
 		switch err {
 		case pg.ErrNoRows:
-			code = http.StatusNotFound
+			resp.Code = errors.CodeNotFound
 		}
 	}
 
-	log.Println(err.Error())
-	if !config.IsReleaseEnv() {
+	if resp.Code >= errors.CodeInternal {
 		log.Println(string(debug.Stack()))
 	}
 
-	c.AbortWithStatusJSON(code, resp)
+	c.AbortWithStatusJSON(resp.Code, resp)
 }
 
-func bindJSON(c *gin.Context, req Validatable) (ok bool) {
+func bindJSON(c *gin.Context, req Validator) (ok bool) {
 	if err := c.ShouldBindJSON(req); err != nil {
-		abort400(c, err)
+		Abort(c, errors.BadRequest(err.Error()))
 		return
 	}
 
 	return validRequest(c, req)
 }
 
-func bindQuery(c *gin.Context, req Validatable) (ok bool) {
+func bindQuery(c *gin.Context, req Validator) (ok bool) {
 	if err := c.ShouldBindQuery(req); err != nil {
-		abort400(c, err)
+		Abort(c, errors.BadRequest(err.Error()))
 		return
 	}
 
 	return validRequest(c, req)
 }
 
-func validRequest(c *gin.Context, req Validatable) (ok bool) {
+func validRequest(c *gin.Context, req Validator) (ok bool) {
 	if err := req.Validate(c); err != nil {
 		Abort(c, err)
 		return
@@ -93,18 +85,18 @@ func BindID(c *gin.Context, id *int64, paramNameOpt ...string) (ok bool) {
 
 	val := c.Param(name)
 	if val == "" {
-		abort400(c, errors.New("ID param missing from request"))
+		Abort(c, ErrIDParamMissingFromRequest)
 		return
 	}
 
 	intVal, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		abort400(c, errors.New("ID param must be int64"))
+		Abort(c, ErrIDParamMustBeInt64)
 		return
 	}
 
 	if intVal < 1 {
-		abort400(c, errors.New("invalid ID"))
+		Abort(c, ErrIDParamMustBeInt64)
 		return
 	}
 

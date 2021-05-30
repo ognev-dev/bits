@@ -9,6 +9,7 @@ type EntityData map[string]interface{}
 
 type Entity struct {
 	ID        int64      `json:"id"`
+	RepoID    int64      `json:"repo_id"`
 	Token     string     `json:"token"`
 	Title     string     `json:"title"`
 	Type      string     `json:"type" pg:",use_zero"`

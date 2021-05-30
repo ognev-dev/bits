@@ -3,8 +3,9 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/refto/server/errors"
+
 	"github.com/gin-gonic/gin"
-	se "github.com/refto/server/server/error"
 	"github.com/refto/server/server/handler"
 )
 
@@ -17,7 +18,7 @@ func RequestAuth(c *gin.Context) {
 			errText = http.StatusText(http.StatusUnauthorized)
 		}
 
-		handler.Abort(c, se.New401(errText))
+		handler.Abort(c, errors.Unauthorized(errText))
 		return
 	}
 

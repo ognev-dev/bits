@@ -5,7 +5,7 @@ import (
 	"github.com/refto/server/server/handler"
 )
 
-func entityRoutes(r *gin.RouterGroup) {
+func publicEntityRoutes(r *gin.RouterGroup) {
 	r.GET("entities/", handler.GetEntities)
 	r.GET("entities/:id/", handler.GetEntityByID)
 }

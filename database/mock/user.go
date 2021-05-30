@@ -1,4 +1,4 @@
-package factory
+package mock
 
 import (
 	"math"
@@ -11,7 +11,7 @@ import (
 	"github.com/refto/server/util"
 )
 
-func MakeUser(opt ...model.User) (m model.User, err error) {
+func User(opt ...model.User) (m model.User, err error) {
 	if len(opt) == 1 {
 		m = opt[0]
 	}
@@ -44,8 +44,8 @@ func MakeUser(opt ...model.User) (m model.User, err error) {
 	return
 }
 
-func CreateUser(opt ...model.User) (m model.User, err error) {
-	m, err = MakeUser(opt...)
+func InsertUser(opt ...model.User) (m model.User, err error) {
+	m, err = User(opt...)
 	if err != nil {
 		return
 	}

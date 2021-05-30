@@ -88,6 +88,7 @@ func CreateOrUpdate(elem *model.Entity) (err error) {
 	err = database.ORM().
 		Model(&old).
 		Where("token = ?", elem.Token).
+		Where("repo_id = ?", elem.RepoID).
 		First()
 	if err != nil && err != pg.ErrNoRows {
 		return

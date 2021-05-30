@@ -11,11 +11,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/refto/server/server/response"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/refto/server/config"
 	"github.com/refto/server/database"
-	"github.com/refto/server/database/factory"
+	"github.com/refto/server/database/mock"
 	"github.com/refto/server/database/model"
 	"github.com/refto/server/logger"
 	"github.com/refto/server/server/route"
@@ -198,6 +200,19 @@ func TestCreate(t *testing.T, path string, body, response interface{}) *httptest
 	return POST(t, req)
 }
 
+// TestCreate422 makes "create" POST request that expects 422 status code
+func TestCreate422(t *testing.T, path string, body interface{}) (resp response.Error, rec *httptest.ResponseRecorder) {
+	req := Request{
+		Path:         path,
+		Body:         body,
+		BindResponse: &resp,
+		AssertStatus: http.StatusUnprocessableEntity,
+	}
+
+	rec = POST(t, req)
+	return
+}
+
 // TestUpdate makes "update" request
 func TestUpdate(t *testing.T, path string, body, response interface{}) *httptest.ResponseRecorder {
 	req := Request{
@@ -244,6 +259,18 @@ func TestGet(t *testing.T, path string, response interface{}) *httptest.Response
 	return GET(t, req)
 }
 
+// TestGet404 makes a "get" request that expects 404 status code
+func TestGet404(t *testing.T, path string) (resp response.Error, rec *httptest.ResponseRecorder) {
+	req := Request{
+		Path:         path,
+		BindResponse: &resp,
+		AssertStatus: http.StatusNotFound,
+	}
+
+	rec = GET(t, req)
+	return
+}
+
 // TestFilter makes "get" request with query params
 func TestFilter(t *testing.T, path string, request, response interface{}) *httptest.ResponseRecorder {
 	query, err := util.StructToQueryString(request)
@@ -269,10 +296,8 @@ func TestFilter(t *testing.T, path string, request, response interface{}) *httpt
 }
 
 func Authorise(t *testing.T) *model.User {
-	if AuthUser != nil && authToken != "" {
-		return AuthUser
-	}
-	user, err := factory.CreateUser()
+	Logout()
+	user, err := mock.InsertUser()
 	assert.NotError(t, err)
 	AuthoriseAs(t, &user)
 
@@ -289,11 +314,6 @@ func AuthoriseAs(t *testing.T, user *model.User) {
 
 	AuthUser = user
 	authToken = authtoken.Sign(token)
-}
-
-func AuthoriseNew(t *testing.T) {
-	Logout()
-	Authorise(t)
 }
 
 func Logout() {

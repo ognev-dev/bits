@@ -1,9 +1,14 @@
 package request
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/refto/server/database/model"
+	"github.com/refto/server/errors"
 )
+
+var ErrInvalidOwnerDefault = errors.Forbidden("Hey, that's not belongs to you")
 
 type Pagination struct {
 	Page  int `json:"page,omitempty" form:"page"`
@@ -19,17 +24,42 @@ func (r *NoValidation) Validate(*gin.Context) (err error) {
 const ctxUserKey = "request_user"
 const ctxClientKey = "request_client"
 
-func HasUser(c *gin.Context) (ok bool) {
+func HasAuthUser(c *gin.Context) (ok bool) {
 	_, ok = c.Get(ctxUserKey)
 	return
 }
 
-func User(c *gin.Context) model.User {
+func AuthUserOf(c *gin.Context, userID int64) bool {
+	if !HasAuthUser(c) {
+		return false
+	}
+	if AuthUser(c).ID == userID {
+		return true
+	}
+	return false
+}
+
+func InvalidUser(c *gin.Context, userID int64, errOpt ...error) bool {
+	if !AuthUserOf(c, userID) {
+		err := ErrInvalidOwnerDefault
+		if len(errOpt) == 1 {
+			err = errOpt[0]
+		}
+
+		c.JSON(http.StatusForbidden, err.Error())
+		c.Abort()
+		return true
+	}
+
+	return false
+}
+
+func AuthUser(c *gin.Context) model.User {
 	u := c.MustGet(ctxUserKey)
 	return u.(model.User)
 }
 
-func SetUser(c *gin.Context, u model.User) {
+func SetAuthUser(c *gin.Context, u model.User) {
 	c.Set(ctxUserKey, u)
 }
 

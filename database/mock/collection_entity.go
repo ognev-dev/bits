@@ -1,11 +1,11 @@
-package factory
+package mock
 
 import (
 	"github.com/refto/server/database"
 	"github.com/refto/server/database/model"
 )
 
-func MakeCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEntity, err error) {
+func CollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEntity, err error) {
 	if len(opt) == 1 {
 		m = opt[0]
 	}
@@ -13,7 +13,7 @@ func MakeCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEnti
 	if m.CollectionID == 0 {
 		if m.Collection == nil {
 			m.Collection = &model.Collection{}
-			*m.Collection, err = CreateCollection()
+			*m.Collection, err = InsertCollection()
 			if err != nil {
 				return m, err
 			}
@@ -23,7 +23,7 @@ func MakeCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEnti
 	if m.EntityID == 0 {
 		if m.Entity == nil {
 			m.Entity = &model.Entity{}
-			*m.Entity, err = CreateEntity()
+			*m.Entity, err = InsertEntity()
 			if err != nil {
 				return m, err
 			}
@@ -35,8 +35,8 @@ func MakeCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEnti
 	return
 }
 
-func CreateCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEntity, err error) {
-	m, err = MakeCollectionEntity(opt...)
+func InsertCollectionEntity(opt ...model.CollectionEntity) (m model.CollectionEntity, err error) {
+	m, err = CollectionEntity(opt...)
 	if err != nil {
 		return
 	}

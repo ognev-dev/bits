@@ -16,8 +16,8 @@ type NotNilT bool
 var NotNil = NotNilT(true)
 
 func DatabaseCount(t *testing.T, table string, data util.M) int {
-	args := []interface{}{}
-	wheres := []string{}
+	args := make([]interface{}, 0)
+	wheres := make([]string, 0)
 
 	args = append(args, pg.Ident(table))
 

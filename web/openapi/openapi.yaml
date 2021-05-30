@@ -2,7 +2,7 @@ openapi: "3.0.0"
 info:
   version: "1"
   title: refto.dev API
-  description: Thanks to <a href="https://swagger.io/docs/specification/about/" target="_blank">OpenAPI</a>
+  description: <a href="https://refto.dev/" target="_blank">refto.dev</a>
 #  termsOfService: http://swagger.io/terms/
 #  contact:
 #    name: Swagger API Team
@@ -12,10 +12,11 @@ info:
 #    name: Apache 2.0
 #    url: https://www.apache.org/licenses/LICENSE-2.0.html
 servers:
-  # %SERVER_URL% is placeholder that will be replaced by server with actual URL
+  # %SERVER_URL% is a placeholder that will be replaced by server with actual URL
   # this way openapi's server URL will match the server that it is served by
   - url: "%SERVER_URL%"
 paths:
+  # Entities
   /entities/:
     get:
       tags:
@@ -102,6 +103,8 @@ paths:
             application/json:
               schema:
                 $ref: './entities.yaml#EntityWithCollections'
+
+  # Topics
   /topics/:
     get:
       tags:
@@ -132,6 +135,7 @@ paths:
                     description: Count of topics
                     type: integer
 
+  # Collections
   /collections/:
     get:
       tags:
@@ -183,7 +187,6 @@ paths:
             application/json:
               schema:
                 $ref: './collections.yaml#Collection'
-
   /collections/{id}/:
     parameters:
       - name: id
@@ -247,6 +250,167 @@ paths:
         - Entities
       summary: Remove entity from collection
       operationId: removeEntityFromCollection
+      responses:
+        '200':
+          $ref: './responses.yaml#SuccessResponse'
+
+  # Repositories
+  /repositories/:
+    post:
+      tags:
+        - Repositories
+      summary: Add repository
+      operationId: addRepository
+      requestBody:
+        $ref: './repositories.yaml#CreateRepositoryReq'
+      responses:
+        '201':
+          description: Repository's secret
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#CreateRepositoryResp'
+    get:
+      tags:
+        - Repositories
+      summary: Get repositories
+      operationId: getRepositories
+      parameters:
+        - $ref: './query-params.yaml#Page'
+        - $ref: './query-params.yaml#Limit'
+        - name: path
+          in: query
+          description: Filter by path
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Filter by name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Repositories
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#FilterRepositoriesResp'
+
+  /user/repositories/:
+    get:
+      tags:
+        - Repositories
+        - User
+      summary: Get repositories of current user
+      operationId: getUserRepositories
+      parameters:
+        - $ref: './query-params.yaml#Page'
+        - $ref: './query-params.yaml#Limit'
+        - name: path
+          in: query
+          description: Filter by path
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Filter by name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Repositories of current user
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#FilterRepositoriesResp'
+
+  /repositories/{id}/secret/:
+    parameters:
+      - name: id
+        in: path
+        description: ID of repository
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - Repositories
+      summary: Get new secret
+      operationId: repositoryGetNewSecret
+      responses:
+        '200':
+          description: Repository's secret
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#CreateRepositoryResp'
+
+  /repositories/{id}/import/:
+    parameters:
+      - name: id
+        in: path
+        description: ID of repository
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - Repositories
+      summary: Import data from GitHub repository
+      description: Repositoty must be confirmed first (by success import from GitHub's webhook or by being added by repo owner)
+      operationId: importRepository
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: './responses.yaml#SuccessResponse'
+
+  /repositories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        description: ID of repository
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      tags:
+        - Repositories
+      summary: Get repository by ID
+      operationId: getRepository
+      responses:
+        '200':
+          description: Repository
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#Repository'
+    put:
+      tags:
+        - Repositories
+      summary: Update repository
+      operationId: updateRepository
+      requestBody:
+        $ref: './repositories.yaml#UpdateRepositoryReq'
+      responses:
+        '200':
+          description: Repository
+          content:
+            application/json:
+              schema:
+                $ref: './repositories.yaml#Repository'
+    delete:
+      tags:
+        - Repositories
+      summary: Delete repository
+      operationId: deleteRepository
       responses:
         '200':
           $ref: './responses.yaml#SuccessResponse'

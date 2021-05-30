@@ -1,4 +1,4 @@
-package factory
+package mock
 
 import (
 	fake "github.com/brianvoe/gofakeit"
@@ -6,7 +6,7 @@ import (
 	"github.com/refto/server/database/model"
 )
 
-func MakeTopic(opt ...model.Topic) (m model.Topic, err error) {
+func Topic(opt ...model.Topic) (m model.Topic, err error) {
 	if len(opt) == 1 {
 		m = opt[0]
 	}
@@ -18,8 +18,8 @@ func MakeTopic(opt ...model.Topic) (m model.Topic, err error) {
 	return
 }
 
-func CreateTopic(opt ...model.Topic) (m model.Topic, err error) {
-	m, err = MakeTopic(opt...)
+func InsertTopic(opt ...model.Topic) (m model.Topic, err error) {
+	m, err = Topic(opt...)
 	if err != nil {
 		return
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/refto/server/server/handler"
 )
 
-func webHookRoutes(r *gin.RouterGroup) {
+func publicWebHookRoutes(r *gin.RouterGroup) {
 	r.POST("hooks/data-pushed/", handler.ImportDataFromRepoByGitHubWebHook)
 	r.POST("hooks/pull-request/", handler.ProcessPullRequestActions)
 }
