@@ -15,17 +15,31 @@ import (
 
 func TestFilterEntities(t *testing.T) {
 	// Create test data
-	topic1, err := mock.InsertTopic(model.Topic{Name: "topic1"})
+	repo, err := mock.InsertRepository(model.Repository{
+		Type: model.RepoTypeGlobal,
+	})
 	assert.NotError(t, err)
-	topic2, err := mock.InsertTopic(model.Topic{Name: "topic2"})
+	topic1, err := mock.InsertTopic(model.Topic{
+		Name:   "topic1",
+		RepoID: repo.ID,
+	})
 	assert.NotError(t, err)
-	topic3, err := mock.InsertTopic(model.Topic{Name: "topic3"})
+	topic2, err := mock.InsertTopic(model.Topic{
+		Name:   "topic2",
+		RepoID: repo.ID,
+	})
+	assert.NotError(t, err)
+	topic3, err := mock.InsertTopic(model.Topic{
+		Name:   "topic3",
+		RepoID: repo.ID,
+	})
 	assert.NotError(t, err)
 
 	// entity with 1 topic
 	_, err = mock.InsertEntity(model.Entity{
 		Title:  "ent1",
 		Topics: []model.Topic{{ID: topic1.ID}},
+		RepoID: repo.ID,
 	})
 	assert.NotError(t, err)
 
@@ -36,6 +50,7 @@ func TestFilterEntities(t *testing.T) {
 			{ID: topic1.ID},
 			{ID: topic2.ID},
 		},
+		RepoID: repo.ID,
 	})
 	assert.NotError(t, err)
 
@@ -47,6 +62,7 @@ func TestFilterEntities(t *testing.T) {
 			{ID: topic2.ID},
 			{ID: topic3.ID},
 		},
+		RepoID: repo.ID,
 	})
 	assert.NotError(t, err)
 
@@ -98,15 +114,39 @@ func TestFilterEntities(t *testing.T) {
 
 func TestFilterEntitiesByCollection(t *testing.T) {
 	Authorise(t)
+
 	// Create test data
-	col, err := mock.InsertCollection(model.Collection{User: AuthUser})
+	repo, err := mock.InsertRepository(model.Repository{
+		Type: model.RepoTypeGlobal,
+	})
+	FailOnError(t, err)
+	e1, err := mock.InsertEntity(model.Entity{RepoID: repo.ID})
+	FailOnError(t, err)
+	e2, err := mock.InsertEntity(model.Entity{RepoID: repo.ID})
+	FailOnError(t, err)
+	e3, err := mock.InsertEntity(model.Entity{RepoID: repo.ID})
+	FailOnError(t, err)
+
+	col, err := mock.InsertCollection(model.Collection{
+		User: AuthUser,
+	})
+	FailOnError(t, err)
+	ce1, err := mock.InsertCollectionEntity(model.CollectionEntity{
+		CollectionID: col.ID,
+		Entity:       &e1,
+	})
 	assert.NotError(t, err)
-	ce1, err := mock.InsertCollectionEntity(model.CollectionEntity{CollectionID: col.ID})
+	ce2, err := mock.InsertCollectionEntity(model.CollectionEntity{
+		CollectionID: col.ID,
+		Entity:       &e2,
+	})
 	assert.NotError(t, err)
-	ce2, err := mock.InsertCollectionEntity(model.CollectionEntity{CollectionID: col.ID})
+	ce3, err := mock.InsertCollectionEntity(model.CollectionEntity{
+		CollectionID: col.ID,
+		Entity:       &e3,
+	})
 	assert.NotError(t, err)
-	ce3, err := mock.InsertCollectionEntity(model.CollectionEntity{CollectionID: col.ID})
-	assert.NotError(t, err)
+
 	_, err = mock.InsertCollectionEntity()
 	assert.NotError(t, err)
 
@@ -116,8 +156,8 @@ func TestFilterEntitiesByCollection(t *testing.T) {
 	var resp response.FilterEntities
 
 	TestFilter(t, "entities", req, &resp)
-	assert.True(t, 3 == resp.EntitiesCount)
-	assert.True(t, 3 == len(resp.Entities))
+	assert.Equals(t, 3, resp.EntitiesCount)
+	assert.Equals(t, 3, len(resp.Entities))
 	for _, v := range resp.Entities {
 		if v.ID == ce1.EntityID || v.ID == ce2.EntityID || v.ID == ce3.EntityID {
 			continue

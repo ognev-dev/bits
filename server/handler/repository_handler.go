@@ -108,7 +108,8 @@ func UpdateRepository(c *gin.Context) {
 
 func GetNewRepositorySecret(c *gin.Context) {
 	repo := request.Repository(c)
-	if request.InvalidUser(c, repo.ID) {
+
+	if request.InvalidUser(c, repo.UserID) {
 		return
 	}
 

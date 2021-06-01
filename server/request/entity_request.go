@@ -25,4 +25,7 @@ type FilterEntities struct {
 	Query      string   `json:"query" form:"query"`
 	Collection int64    `json:"col" form:"col"`
 	Repo       int64    `json:"repo" form:"repo"`
+
+	// internal
+	User int64 `json:"-" form:"-"`
 }

@@ -59,6 +59,10 @@ func (m *Repository) BeforeUpdate(ctx context.Context) (context.Context, error) 
 	return ctx, nil
 }
 
+func (m *Repository) IsPrivate() bool {
+	return m.Type == RepoTypePrivate
+}
+
 type RepoImportStatus string
 
 const (

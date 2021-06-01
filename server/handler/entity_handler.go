@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/refto/server/service/repository"
+
 	"github.com/gin-gonic/gin"
 	"github.com/refto/server/database/model"
 	"github.com/refto/server/server/request"
@@ -20,6 +22,8 @@ func GetEntities(c *gin.Context) {
 	}
 
 	var (
+		// if only one topic selected, there can be a definition for this topic
+		// if so return it as first element in response
 		definition *model.Entity
 		err        error
 	)
@@ -44,6 +48,24 @@ func GetEntities(c *gin.Context) {
 			Abort(c, err)
 			return
 		}
+	}
+
+	if req.Repo != 0 {
+		repo, err := repository.FindByID(req.Repo)
+		if err != nil {
+			Abort(c, err)
+			return
+		}
+
+		if repo.IsPrivate() && repo.UserID != request.AuthUser(c).ID {
+			err = errors.New("unable to display entities from private repository")
+			Abort(c, err)
+			return
+		}
+	}
+
+	if request.HasAuthUser(c) {
+		req.User = request.AuthUser(c).ID
 	}
 
 	data, count, err := entity.Filter(req)

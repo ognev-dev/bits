@@ -71,7 +71,7 @@ func Common(in CommonTopicsParams) (out []string, err error) {
 		Column("e.id").
 		Join("JOIN entity_topics et ON et.topic_id=topic.id").
 		Join("JOIN entities e ON et.entity_id=e.id").
-		WhereIn("topic.name IN (?)", in).
+		WhereIn("topic.name IN (?)", in.Topics).
 		Having("COUNT(topic.id) = ?", len(in.Topics)).
 		Group("e.id")
 
@@ -93,7 +93,7 @@ func Common(in CommonTopicsParams) (out []string, err error) {
 		TableExpr("selected_entities se").
 		Join("JOIN entity_topics et ON et.entity_id=se.id").
 		Join("JOIN topics t ON et.topic_id=t.id").
-		WhereIn("t.name NOT IN (?)", in).
+		WhereIn("t.name NOT IN (?)", in.Topics).
 		Order("name").
 		Group("t.id").
 		Select(&out)

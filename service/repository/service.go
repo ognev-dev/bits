@@ -73,7 +73,8 @@ func Create(m *model.Repository) (secret string, err error) {
 	m.Confirmed = false
 
 	err = database.ORM().Insert(m)
-	return
+
+	return m.Secret, err
 }
 
 func NewSecret(repoID int64) (secret string, err error) {

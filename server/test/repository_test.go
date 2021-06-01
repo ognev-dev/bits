@@ -67,7 +67,7 @@ func TestRepositoryGetNewSecret(t *testing.T) {
 	m, err := mock.InsertRepository(model.Repository{
 		UserID: AuthUser.ID,
 	})
-	assert.NotError(t, err)
+	FailOnError(t, err)
 
 	var resp response.CreateRepository
 	POST(t, Request{

@@ -14,6 +14,13 @@ func Topic(opt ...model.Topic) (m model.Topic, err error) {
 	if m.Name == "" {
 		m.Name = fake.Name()
 	}
+	if m.RepoID == 0 {
+		repo, err := InsertRepository()
+		if err != nil {
+			return m, err
+		}
+		m.RepoID = repo.ID
+	}
 
 	return
 }

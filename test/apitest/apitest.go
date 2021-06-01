@@ -320,3 +320,9 @@ func Logout() {
 	AuthUser = nil
 	authToken = ""
 }
+
+func FailOnError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}

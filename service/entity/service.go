@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"fmt"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/refto/server/database"
 	"github.com/refto/server/database/filter"
@@ -8,15 +10,21 @@ import (
 	"github.com/refto/server/server/request"
 )
 
+// DefinitionType
 // Definitions is a special kind of data that displayed only if one topic selected
 // Should filter out definitions from regular data
 const DefinitionType = "definition"
 
+// DefinitionTokenPrefix
 // To get needed definition I need to know its token
 // And since token is a path to data, i need to know that path to build valid token
 // So all definitions should be stored in one location
 // and it must be persistent
 const DefinitionTokenPrefix = "definitions/"
+
+// SingleTopicOrder
+// when only one topic selected sort data in this order
+const SingleTopicOrder = "'person', 'book', 'conference', 'software'"
 
 func Filter(req request.FilterEntities) (data []model.Entity, count int, err error) {
 	q := database.ORM().
@@ -43,7 +51,7 @@ func Filter(req request.FilterEntities) (data []model.Entity, count int, err err
 	if len(req.Topics) == 1 {
 		q.Where("t.name = ?", req.Topics[0]).
 			// Add specific order when only one topic is selected
-			OrderExpr("array_position(array['person', 'book', 'conference', 'software']::text[], type)")
+			OrderExpr(fmt.Sprintf("array_position(array[%s]::text[], type)", SingleTopicOrder))
 	}
 
 	if len(req.Topics) > 1 {
@@ -59,6 +67,25 @@ func Filter(req request.FilterEntities) (data []model.Entity, count int, err err
 	if req.Collection != 0 {
 		q.Join("JOIN collection_entities ce ON ce.entity_id=entity.id").
 			Where("ce.collection_id = ?", req.Collection)
+	}
+
+	// filter by exact repo if set
+	if req.Repo != 0 {
+		q.Where("entity.repo_id = ?", req.Repo)
+	} else { // otherwise filter by user's repos && global
+		// this will be not efficient once we'll have lots of global repos
+		// add repo_type to entity maybe?
+		if req.User == 0 {
+			// filter only by global repos
+			q.Where("entity.repo_id IN (SELECT id FROM repositories WHERE type = ?)", model.RepoTypeGlobal)
+		} else {
+			// filter by global repos and any that belongs to user
+			q.Where(
+				"entity.repo_id IN (SELECT id FROM repositories WHERE type = ? OR user_id = ?)",
+				model.RepoTypeGlobal,
+				req.User,
+			)
+		}
 	}
 
 	q.OrderExpr("updated_at DESC, created_at DESC")
